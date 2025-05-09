@@ -57,4 +57,12 @@ def main():
     
     # Cek validitas setiap proxy
     valid_proxies = [proxy for proxy in all_proxies if check_proxy_validity(proxy)]
-    print(f"Total valid
+    print(f"Total valid proxies: {len(valid_proxies)}")  # Baris yang diperbaiki
+
+    # Simpan proxy valid ke dalam file
+    save_valid_proxies(valid_proxies)
+    print("Valid proxies have been saved to .github/generate/valid_proxies.txt")
+
+# Jalankan program
+if __name__ == "__main__":
+    main()
