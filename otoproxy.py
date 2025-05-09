@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
-from proxy_parser import ProxyParser
+import proxy_parser  # Impor modul proxy_parser dengan cara yang benar
 
 # Fungsi untuk mengambil proxy dari URL secara asynchronous
 async def fetch_proxies_from_url(session, url):
@@ -19,24 +19,25 @@ async def fetch_proxies_from_url(session, url):
         print(f"Error while fetching proxies from {url}: {str(e)}")
         return []
 
-# Fungsi untuk memeriksa validitas proxy
+# Fungsi untuk memeriksa validitas proxy menggunakan proxy_parser
 async def check_proxy_validity(session, proxy):
     print(f"Checking validity of proxy: {proxy}")  # Log progress
-    test_url = 'http://httpbin.org/ip'
-    proxies = {
-        'http': proxy,
-        'https': proxy
-    }
+    test_url = 'http://httpbin.org/ip'  # Tes koneksi menggunakan HTTPBin
+    
+    # Validasi proxy menggunakan proxy_parser
     try:
-        async with session.get(test_url, proxy=proxy, timeout=5) as response:
-            if response.status == 200:
-                print(f"Proxy {proxy} is valid.")  # Log valid proxy
-                return True
-            else:
-                print(f"Proxy {proxy} is invalid.")  # Log invalid proxy
-                return False
-    except Exception:
-        print(f"Proxy {proxy} is invalid.")  # Log invalid proxy
+        # Memeriksa format proxy menggunakan proxy_parser
+        parsed_proxy = proxy_parser.parse(proxy)  # Gunakan fungsi `parse` dari proxy_parser
+        if parsed_proxy.is_valid:  # Mengecek apakah proxy valid
+            async with session.get(test_url, proxy=proxy, timeout=5) as response:
+                if response.status == 200:
+                    print(f"Proxy {proxy} is valid.")  # Log valid proxy
+                    return True
+                else:
+                    print(f"Proxy {proxy} is invalid.")  # Log invalid proxy
+                    return False
+    except Exception as e:
+        print(f"Error while checking proxy validity for {proxy}: {str(e)}")
         return False
 
 # Fungsi untuk menggabungkan proxy dari berbagai sumber secara asynchronous
@@ -58,6 +59,7 @@ async def save_valid_proxies(valid_proxies):
 
 # Fungsi utama untuk menjalankan program
 async def main():
+    # Baca daftar sumber proxy dari file sources.txt
     with open('sources.txt', 'r') as file:
         sources = file.read().splitlines()
 
