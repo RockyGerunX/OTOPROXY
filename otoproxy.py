@@ -1,6 +1,6 @@
 import aiohttp
 import asyncio
-import proxy_parser  # Impor modul proxy_parser
+import proxy_parser  # Mengimpor proxy_parser untuk validasi proxy
 
 # Fungsi untuk mengambil proxy dari URL secara asynchronous
 async def fetch_proxies_from_url(session, url):
@@ -8,7 +8,7 @@ async def fetch_proxies_from_url(session, url):
         async with session.get(url) as response:
             if response.status == 200:
                 text = await response.text()
-                return text.splitlines()
+                return text.splitlines()  # Mengambil proxy dalam format teks, setiap proxy di baris terpisah
             else:
                 return []
     except Exception as e:
@@ -18,7 +18,7 @@ async def fetch_proxies_from_url(session, url):
 async def check_proxy_validity(session, proxy):
     try:
         # Memeriksa format proxy menggunakan proxy_parser
-        parsed_proxy = proxy_parser.parse(proxy)  # Gunakan fungsi `parse` dari proxy_parser
+        parsed_proxy = proxy_parser.parse(proxy)  # Menggunakan fungsi `parse` dari proxy_parser
         if parsed_proxy.is_valid:  # Mengecek apakah proxy valid
             async with session.get('http://httpbin.org/ip', proxy=proxy, timeout=5) as response:
                 if response.status == 200:
