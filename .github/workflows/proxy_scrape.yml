@@ -1,41 +1,70 @@
-name: Proxy Scrape and Check
+import aiohttp
+import asyncio
+import proxy_parser
+import os  # Import os untuk membuat direktori
 
-on:
-  schedule:
-    - cron: "0 */3 * * *"  # Menjalankan setiap 3 jam
-  workflow_dispatch:  # Memungkinkan workflow untuk dijalankan secara manual
+# Fungsi untuk mengambil proxy dari URL secara asynchronous
+async def fetch_proxies_from_url(session, url):
+    try:
+        async with session.get(url) as response:
+            if response.status == 200:
+                text = await response.text()
+                return text.splitlines()
+            else:
+                return []
+    except Exception as e:
+        return []
 
-jobs:
-  scrape_and_check:
-    runs-on: ubuntu-latest
+# Fungsi untuk memeriksa validitas proxy menggunakan proxy_parser
+async def check_proxy_validity(session, proxy):
+    try:
+        # Memeriksa format proxy menggunakan proxy_parser
+        parsed_proxy = proxy_parser.parse(proxy)  # Menggunakan fungsi `parse` dari proxy_parser
+        if parsed_proxy.is_valid:  # Mengecek apakah proxy valid
+            async with session.get('http://httpbin.org/ip', proxy=proxy, timeout=5) as response:
+                if response.status == 200:
+                    return True
+                else:
+                    return False
+    except Exception:
+        return False
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+# Fungsi untuk menggabungkan proxy dari berbagai sumber secara asynchronous
+async def combine_proxies(sources):
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_proxies_from_url(session, url) for url in sources]
+        all_proxies = await asyncio.gather(*tasks)
+        return [proxy for sublist in all_proxies for proxy in sublist]
 
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
+# Fungsi untuk memfilter dan menyimpan proxy yang valid
+async def save_valid_proxies(valid_proxies):
+    # Membuat direktori .github/generate/ jika belum ada
+    os.makedirs('.github/generate', exist_ok=True)
+    
+    # Menyimpan proxy valid ke dalam file
+    with open('.github/generate/valid_proxies.txt', 'w') as f:
+        for proxy in valid_proxies:
+            f.write(proxy + '\n')
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3-dev
+# Fungsi utama untuk menjalankan program
+async def main():
+    with open('sources.txt', 'r') as file:
+        sources = file.read().splitlines()
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Install dependencies dari requirements.txt
+    # Gabungkan semua proxy dari berbagai sumber secara asynchronous
+    all_proxies = await combine_proxies(sources)
 
-      - name: Run OTOPROXY Script
-        run: |
-          python otoproxy.py
+    # Validasi setiap proxy secara asynchronous
+    async with aiohttp.ClientSession() as session:
+        tasks = [check_proxy_validity(session, proxy) for proxy in all_proxies]
+        valid_proxies_check = await asyncio.gather(*tasks)
 
-      - name: Commit and Push valid_proxies.txt
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add .github/generate/valid_proxies.txt
-          git commit -m "Update valid proxies"
-          git push
+    # Ambil proxy yang valid
+    valid_proxies = [proxy for proxy, is_valid in zip(all_proxies, valid_proxies_check) if is_valid]
+
+    # Simpan proxy valid ke dalam file
+    await save_valid_proxies(valid_proxies)
+
+# Jalankan program
+if __name__ == "__main__":
+    asyncio.run(main())
