@@ -1,0 +1,36 @@
+name: Proxy Scrape and Check
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # Run every 1 hour
+  workflow_dispatch:  # Allow for manual triggering
+
+jobs:
+  scrape_and_check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: Run OTOPROXY Script
+        run: |
+          python otoproxy.py
+
+      - name: Commit and Push valid_proxies.txt
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add .github/generate/valid_proxies.txt
+          git commit -m "Update valid proxies"
+          git push
