@@ -1,4 +1,4 @@
-aiohttp
-beautifulsoup4
-proxy-parser
-requests==2.28.1  # Tentukan versi requests yang stabil
+aiohttp==3.8.1
+beautifulsoup4==4.11.1
+proxy-parser==1.0.6
+requests==2.28.1
