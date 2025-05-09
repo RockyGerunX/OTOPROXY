@@ -9,11 +9,6 @@ jobs:
   scrape_and_check:
     runs-on: ubuntu-latest
 
-    # Membatasi penggunaan CPU maksimal 90%
-    resources:
-      limits:
-        cpu: 90%
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -31,6 +26,7 @@ jobs:
       - name: Run OTOPROXY Script
         run: |
           python otoproxy.py
+        # Output akan ditampilkan di log GitHub Actions
 
       - name: Commit and Push valid_proxies.txt
         run: |
