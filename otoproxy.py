@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
-import proxy_parser  # Mengimpor proxy_parser untuk validasi proxy
+import proxy_parser
+import os  # Import os untuk membuat direktori
 
 # Fungsi untuk mengambil proxy dari URL secara asynchronous
 async def fetch_proxies_from_url(session, url):
@@ -8,7 +9,7 @@ async def fetch_proxies_from_url(session, url):
         async with session.get(url) as response:
             if response.status == 200:
                 text = await response.text()
-                return text.splitlines()  # Mengambil proxy dalam format teks, setiap proxy di baris terpisah
+                return text.splitlines()
             else:
                 return []
     except Exception as e:
@@ -37,6 +38,10 @@ async def combine_proxies(sources):
 
 # Fungsi untuk memfilter dan menyimpan proxy yang valid
 async def save_valid_proxies(valid_proxies):
+    # Membuat direktori .github/generate/ jika belum ada
+    os.makedirs('.github/generate', exist_ok=True)
+    
+    # Menyimpan proxy valid ke dalam file
     with open('.github/generate/valid_proxies.txt', 'w') as f:
         for proxy in valid_proxies:
             f.write(proxy + '\n')
