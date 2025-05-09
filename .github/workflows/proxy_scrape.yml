@@ -32,10 +32,14 @@ jobs:
         run: |
           python otoproxy.py
 
-      - name: Commit and Push valid_proxies.txt
+      - name: Set up Git credentials for pushing
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Commit and Push valid_proxies.txt
+        run: |
           git add .github/generate/valid_proxies.txt
           git commit -m "Update valid proxies"
-          git push
+          git push origin main
